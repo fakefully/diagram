@@ -1,1 +1,778 @@
-# diagram
+--gate implementation
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity xorGate is
+    port( A: in std_logic;
+        B: in std_logic;
+        Y: out std_logic);
+end xorGate;
+
+architecture xorLogic of xorGate is
+    begin
+    Y<=A xor B;
+end xorLogic;
+
+
+----------------------------------------------------
+
+
+-- 1. Design half adder using VHDL.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity half_adder is
+    port(
+        a, b : in std_logic; 
+        sum, carry : out std_logic);
+end half_adder;
+
+architecture Behavioral of half_adder is
+begin
+    sum <= a xor b;
+    carry <= a and b;
+end Behavioral;
+
+
+------------------------------------------------------
+
+
+-- 2. Design half subtractor using VHDL.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity half_subtractor is
+    port(
+        a, b : in std_logic; 
+        diff, borrow : out std_logic);
+end half_subtractor;
+
+architecture Behavioral of half_subtractor is
+begin
+    diff <= a xor b;
+    borrow <= (not a) and b;
+end Behavioral;
+
+
+-------------------------------------------------------
+
+
+-- 3. Design full adder using VHDL.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity full_adder is
+    port(
+        a, b, c : in std_logic; 
+        sum, carry : out std_logic);
+end full_adder;
+
+architecture Behavioral of full_adder is
+begin
+    sum <= a xor b xor c;
+    carry <= (a and b) or (b and c) or (c and a);
+end Behavioral;
+
+
+--------------------------------------------------------------
+
+
+-- 4. Design full subtractor using VHDL.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity full_subtractor is
+    port(
+        a, b, cin : in std_logic; 
+        diff, borrow : out std_logic);
+end full_subtractor;
+
+architecture Behavioral of full_subtractor is
+begin
+    diff <= a xor b xor cin;
+    borrow <= ((not a) and b) or ((not a) and cin) or (b and cin);
+end Behavioral;
+
+
+------------------------------------------------------------
+
+
+-- 4:1 MUX
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+
+entity mux_4to1_top is
+    Port ( SEL : in  STD_LOGIC_VECTOR (1 downto 0);     -- select input
+           A   : in  STD_LOGIC_VECTOR (3 downto 0);     -- inputs
+           X   : out STD_LOGIC);                        -- output
+end mux_4to1_top;
+
+architecture Behavioral of mux_4to1_top is
+begin
+with SEL select
+    X <= A(0) when "00",
+         A(1) when "01",
+         A(2) when "10",
+         A(3) when "11",
+         '0'  when others;
+end Behavioral;
+
+------------------------------------------
+
+
+-- 2:4 decoder
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity decoder2to4 is
+port (
+  A, B : in std_logic;
+  Y0, Y1, Y2, Y3 : out std_logic
+);
+end decoder2to4;
+
+architecture behav of decoder2to4 is
+begin
+  Y0 <= not A and not B;
+  Y1 <= not A and B;
+  Y2 <= A and not B;
+  Y3 <= A and B;
+end behav;
+
+------------------------------------------------------------------------
+
+
+-- 4 bit adder
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity adder4bit is
+    port (a, b: in std_logic_vector(3 downto 0);
+          cin: in std_logic;
+          sum: out std_logic_vector(3 downto 0);
+          cout: out std_logic);
+end adder4bit;
+
+architecture behavior of adder4bit is
+begin
+    process(a, b, cin)
+        variable temp_sum: std_logic_vector(3 downto 0);
+    begin
+        temp_sum := (a xor b) xor cin;
+        sum <= temp_sum;
+        cout <= (a and b) or (a and cin) or (b and cin);
+    end process;
+end behavior;
+
+
+---------------------------------------
+
+
+-- booth multiplier
+
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_signed.ALL;
+
+ENTITY booth_multiplier IS
+
+  GENERIC (x : INTEGER := 8;
+     y : INTEGER := 8);
+  
+  PORT(m : IN STD_LOGIC_VECTOR(x - 1 DOWNTO 0);
+       r : IN STD_LOGIC_VECTOR(y - 1 DOWNTO 0);
+       result : OUT STD_LOGIC_VECTOR(x + y - 1 DOWNTO 0));
+      
+END booth_multiplier;
+
+ARCHITECTURE behavior OF booth_multiplier IS
+
+BEGIN
+  
+  PROCESS(m, r)
+    
+    CONSTANT X_ZEROS : STD_LOGIC_VECTOR(x - 1 DOWNTO 0) := (OTHERS => '0');
+    CONSTANT Y_ZEROS : STD_LOGIC_VECTOR(y - 1 DOWNTO 0) := (OTHERS => '0');
+    
+    VARIABLE a, s, p : STD_LOGIC_VECTOR(x + y + 1 DOWNTO 0);
+    VARIABLE mn      : STD_LOGIC_VECTOR(x - 1 DOWNTO 0);
+  
+  BEGIN
+    
+    a := (OTHERS => '0');
+    s := (OTHERS => '0');
+    p := (OTHERS => '0');
+    
+    IF (m /= X_ZEROS AND r /= Y_ZEROS) THEN
+      
+      a(x + y DOWNTO y + 1) := m;
+      a(x + y + 1) := m(x - 1);
+      
+      mn := (NOT m) + 1;
+      
+      s(x + y DOWNTO y + 1) := mn;
+      s(x + y + 1) := NOT(m(x - 1));
+      
+      p(y DOWNTO 1) := r;
+      
+      FOR i IN 1 TO y LOOP
+        
+        IF (p(1 DOWNTO 0) = "01") THEN
+          p := p + a;
+        ELSIF (p(1 DOWNTO 0) = "10") THEN
+          p := p + s;
+        END IF;
+        
+        -- Shift Right Arithmetic
+        p(x + y DOWNTO 0) := p(x + y + 1 DOWNTO 1);
+      
+      END LOOP;
+      
+    END IF;
+    
+    result <= p(x + y DOWNTO 1);
+    
+  END PROCESS;
+  
+END behavior;
+
+---------------------------------------
+
+
+-- restoring divider
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.NUMERIC_STD.ALL;
+
+entity restoring_division is
+Port(
+M : in std_logic_vector(15 downto 0);
+Q : in std_logic_vector(31 downto 0);
+A : out std_logic_vector(15 downto 0);
+Q_out : out std_logic_vector(31 downto 0);
+clk : in std_logic
+);
+end entity restoring_division;
+
+architecture Behavioral of restoring_division is
+  type state_t is (shift_left_prime,A_minus_M,shift_left , restore_A , initial_state , split_AQ,assign_Q0,decrease_N,check_if_N_is_ZERO,finish_state);
+  signal state : state_t := initial_state;
+  signal next_state : state_t := shift_left;
+  signal AQ : std_logic_vector(47 downto 0);
+  signal A_temp : std_logic_vector(15 downto 0);
+  signal Q_temp : std_logic_vector(31 downto 0);
+  signal N : std_logic_vector(5 downto 0);
+begin
+    CMB : process(state)
+      begin
+        case state is
+        
+          when initial_state =>
+            N <= "100000";
+            A_temp <= "0000000000000000";
+            --AQ <= "0000000000000000" & Q;
+            AQ <= "0000000000000000" & "00000000000000000000000000001011";
+            --Q_temp <= Q ;
+            Q_temp <= "00000000000000000000000000001111" ;
+            next_state <= shift_left;
+            
+            
+          when shift_left =>
+            AQ <= A_temp & Q_temp;
+            next_state <= shift_left_prime;
+                            
+          when shift_left_prime => 
+             AQ <= AQ(46 downto 0) & '0';
+            next_state <= split_AQ;
+          
+          when split_AQ =>
+            A_temp <= AQ(47 downto 32);
+            Q_temp <= AQ(31 downto 0);
+            next_state <= A_minus_M;
+            
+          when A_minus_M => 
+            A_temp  <= std_logic_vector(unsigned(A_temp) - unsigned(M)); 
+            next_state <= assign_Q0;
+
+            
+          when assign_Q0 => 
+            if(A_temp(15) = '1') then
+              Q_temp(0) <= '0';
+              next_state <= restore_A;
+            else 
+              Q_temp(0) <= '1';
+               next_state <= decrease_N;
+            end if;
+            
+        
+          when restore_A => 
+            A_temp <= std_logic_vector(unsigned(A_temp) + unsigned(M)); 
+            next_state <= decrease_N;
+
+          when decrease_N =>
+             N <=std_logic_vector(unsigned(N)  - "0001");
+            next_state <= check_if_N_is_ZERO;
+          
+          
+          when check_if_N_is_ZERO =>
+          
+             if(N = "000000") then 
+                next_state <= finish_state;
+            else 
+               next_state <= shift_left;
+             end if;
+            
+            
+           when finish_state => 
+              Q_out <= Q_temp;
+             A <= A_temp;
+             
+        end case;
+      end process;
+    REG : process(clk)
+      begin
+        if(clk'event and clk = '1') then
+          state <= next_state;
+        end if;
+    end process;
+end Behavioral;
+
+
+--------------------------------------
+
+
+-- non restoring divider
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity nonrestoring_divider is
+    port (dividend, divisor: in std_logic_vector(3 downto 0);
+          quotient: out std_logic_vector(3 downto 0);
+          remainder: out std_logic_vector(3 downto 0));
+end nonrestoring_divider;
+
+architecture behavior of nonrestoring_divider is
+begin
+    process(dividend, divisor)
+        variable A, Q, M: std_logic_vector(3 downto 0);
+        variable neg_divisor: std_logic_vector(3 downto 0);
+        variable count: integer range 0 to 4;
+    begin
+        A := dividend;
+        Q := "0000";
+        M := divisor;
+        neg_divisor := std_logic_vector(-signed(divisor));
+        count := 4;
+        while count > 0 loop
+            A := A + M;
+            if A(3) = '1' then
+                Q(0) := '0';
+                A := A - M;
+            else
+                Q(0) := '1';
+            end if;
+            Q(3 downto 1) := Q(2 downto 0);
+            Q(0) := not Q(0);
+            M(3 downto 1) := M(2 downto 0);
+            M(0) := Q(3);
+            count := count - 1;
+        end loop;
+        quotient <= Q;
+        remainder <= A;
+    end process;
+end behavior;
+
+------------------------------------
+
+
+-- PISO register
+
+library ieee;
+use ieee.std_logic_1164.all;
+
+entity piso_register is
+    port (parallel_in: in std_logic_vector(3 downto 0);
+          serial_out: out std_logic;
+          clock, reset: in std_logic);
+end piso_register;
+
+architecture behavior of piso_register is
+    signal shift_reg: std_logic_vector(3 downto 0);
+begin
+    process(clock, reset)
+    begin
+        if reset = '1' then
+            shift_reg <= (others => '0');
+        elsif rising_edge(clock) then
+            shift_reg(3 downto 1) <= shift_reg(2 downto 0);
+            shift_reg(0) <= parallel_in(0);
+            serial_out <= shift_reg(3);
+        end if;
+    end process;
+end behavior;
+
+---------------------------------
+
+-- PIPO register
+
+-- Implement PIPO shift register using VHDL program.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity pipo_reg is
+    port (
+        clk: in std_logic; 
+        reset: in std_logic; 
+        parallel_in: in std_logic_vector(3 downto 0); 
+        parallel_out: out std_logic_vector(3 downto 0) 
+    );
+end pipo_reg;
+
+architecture Behavioral of pipo_reg is
+    signal shift_reg: std_logic_vector(3 downto 0);
+begin
+    shift_process: process(clk, reset)
+    begin
+        if reset = '1' then 
+            shift_reg <= (others => '0');
+        elsif rising_edge(clk) then 
+            shift_reg <= parallel_in; 
+        end if;
+    end process shift_process;
+    parallel_out <= shift_reg;
+end Behavioral;
+
+------------------------------------------------
+
+
+-- SIPO register
+
+-- Implement SIPO shift register using VHDL program.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity sipo_reg is
+    port (
+        clk: in std_logic; 
+        reset: in std_logic; 
+        serial_in: in std_logic; 
+        parallel_out: out std_logic_vector(3 downto 0) 
+    );
+end sipo_reg;
+
+architecture Behavioral of sipo_reg is
+    signal shift_reg: std_logic_vector(3 downto 0);
+begin
+    shift_process: process(clk, reset)
+    begin
+        if reset = '1' then 
+            shift_reg <= (others => '0');
+        elsif rising_edge(clk) then 
+            shift_reg <= serial_in & shift_reg(3 downto 1); 
+        end if;
+    end process shift_process;
+    parallel_out <= shift_reg;
+end Behavioral;
+
+-------------------------------------------------------
+
+
+-- Implement PIPO shift register using VHDL program.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity pipo_reg is
+    port (
+        clk: in std_logic; 
+        reset: in std_logic; 
+        parallel_in: in std_logic_vector(3 downto 0); 
+        parallel_out: out std_logic_vector(3 downto 0) 
+    );
+end pipo_reg;
+
+architecture Behavioral of pipo_reg is
+    signal shift_reg: std_logic_vector(3 downto 0);
+begin
+    shift_process: process(clk, reset)
+    begin
+        if reset = '1' then 
+            shift_reg <= (others => '0');
+        elsif rising_edge(clk) then 
+            shift_reg <= parallel_in; 
+        end if;
+    end process shift_process;
+    parallel_out <= shift_reg;
+end Behavioral;
+
+
+-------------------------------------------------------------------
+
+
+
+-- logic unit
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+
+entity ALU is
+    port(
+        a,b: in std_logic_vector(1 downto 0);
+        sel: in std_logic_vector(1 downto 0); -- select line
+        res: out std_logic_vector(1 downto 0)
+    );
+end ALU;
+
+architecture Behavioral of ALU is 
+begin
+    process(sel,a,b)
+    begin
+        case sel is
+            when "00" =>
+                res <= not b;
+            when "01" =>
+                res <= a and b;
+            when "10" =>
+                res <= a or b;
+            when "11" =>
+                res <= a xor b;    
+            when others =>
+                NULL;
+        end case;
+    end process;
+end Behavioral;
+
+---------------------------------------------------------
+
+
+-- arithmetic unit
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+use IEEE.std_logic_unsigned.all;
+use IEEE.std_logic_arith.all;
+
+entity arithmetic_unit is
+    port(
+        a,b: in std_logic_vector(3 downto 0);
+        op: in std_logic_vector(2 downto 0);
+        f: out std_logic_vector(3 downto 0)
+    );
+end arithmetic_unit;
+
+architecture Behavioral of arithmetic_unit is 
+begin
+    process(op,a,b)
+    variable temp: std_logic_vector(3 downto 0);
+    begin
+        case op is
+            when "000" =>
+                temp := a+b;
+            when "001" =>
+                temp := a+b+1; 
+            when "010" =>
+                temp := a+(not b)+1; 
+            when "011" =>
+                temp := a+(not b); 
+            when "100" =>
+                temp := a+1; 
+            when "101" =>
+                temp := a-1; 
+            when "110" =>
+                temp := a; 
+            when "111" =>
+                temp := b; 
+            when others =>
+                NULL;
+        end case;
+        f <= temp;
+    end process;
+end Behavioral;
+
+
+--------------------------------------------------
+
+
+-- shifter unit.
+
+library IEEE;
+use IEEE.std_logic_1164.all;
+
+entity shifter_unit is
+    port(
+        a: in std_logic_vector(3 downto 0);
+        op: in std_logic;
+        f: out std_logic_vector(3 downto 0)
+    );
+end shifter_unit;
+
+architecture Behavioral of shifter_unit is 
+begin
+    process(op,a)
+    variable temp: std_logic_vector(3 downto 0);
+    begin
+        case op is
+            when '0' =>                             --Left Shift
+                temp(3 downto 1) := a(2 downto 0);
+                temp(0) := '0';
+            when '1' =>                             --Right Shift
+                temp(2 downto 0) := a(3 downto 1);
+                temp(3) := '0';
+            when others =>
+                NULL;
+        end case;
+        f <= temp;
+    end process;
+end Behavioral;
+
+
+--------------------------------------------------------
+
+
+-- SR flipflop
+
+
+library ieee;
+use ieee. std_logic_1164.all;
+use ieee. std_logic_arith.all;
+use ieee. std_logic_unsigned.all;
+ 
+entity SR_FF is
+PORT( S,R,CLOCK: in std_logic;
+Q, QBAR: out std_logic);
+end SR_FF;
+ 
+Architecture behavioral of SR_FF is
+begin
+PROCESS(CLOCK)
+variable tmp: std_logic;
+begin
+if(CLOCK='1' and CLOCK'EVENT) then
+if(S='0' and R='0')then
+tmp:=tmp;
+elsif(S='1' and R='1')then
+tmp:='Z';
+elsif(S='0' and R='1')then
+tmp:='0';
+else
+tmp:='1';
+end if;
+end if;
+Q <= tmp;
+QBAR <= not tmp;
+end PROCESS;
+end behavioral;
+
+
+--------------------------------------------------------
+
+
+-- D flipflop
+
+
+library ieee;
+use ieee. std_logic_1164.all;
+use ieee. std_logic_arith.all;
+use ieee. std_logic_unsigned.all;
+ 
+entity D_FF is
+PORT( D,CLOCK: in std_logic;
+Q: out std_logic);
+end D_FF;
+ 
+architecture behavioral of D_FF is
+begin
+process(CLOCK)
+begin
+if(CLOCK='1' and CLOCK'EVENT) then
+Q <= D;
+end if;
+end process;
+end behavioral;
+
+
+--------------------------------------------------------
+
+
+
+-- JK flipflop
+
+
+
+library ieee;
+use ieee. std_logic_1164.all;
+use ieee. std_logic_arith.all;
+use ieee. std_logic_unsigned.all;
+ 
+entity JK_FF is
+PORT( J,K,CLOCK: in std_logic;
+Q, QB: out std_logic);
+end JK_FF;
+ 
+Architecture behavioral of JK_FF is
+begin
+PROCESS(CLOCK)
+variable TMP: std_logic;
+begin
+if(CLOCK='1' and CLOCK'EVENT) then
+if(J='0' and K='0')then
+TMP:=TMP;
+elsif(J='1' and K='1')then
+TMP:= not TMP;
+elsif(J='0' and K='1')then
+TMP:='0';
+else
+TMP:='1';
+end if;
+end if;
+Q<=TMP;
+Q <=not TMP;
+end PROCESS;
+end behavioral;
+
+
+---------------------------------------------
+
+
+
+-- T flipflop
+
+
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+ 
+entity T_FF is
+port( T: in std_logic;
+Clock: in std_logic;
+Q: out std_logic);
+end T_FF;
+ 
+architecture Behavioral of T_FF is
+signal tmp: std_logic;
+begin
+process (Clock)
+begin
+if Clock'event and Clock='1' then
+ 
+if T='0' then
+tmp <= tmp;
+elsif T='1' then
+tmp <= not (tmp);
+end if;
+end if;
+end process;
+Q <= tmp;
+end Behavioral;
